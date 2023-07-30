@@ -1,6 +1,6 @@
 import p5 from 'p5';
 import { Attractor, AttractorKind } from './attractor';
-import { randomScreenPosition } from './utils';
+import { centrePos, randomScreenPosition } from './utils';
 import { Bullet, fireBullet } from './bullet';
 import { Trail, drawTrail } from './trail';
 
@@ -80,9 +80,6 @@ export function updateShips(
     }
 }
 
-export function centrePos(p: p5): p5.Vector {
-    return p.createVector(p.width / 2, p.height / 2);
-}
 export function updateShip(
     ship: Ship,
     attractors: Attractor[],

@@ -9,31 +9,30 @@ import {
 } from './attractor';
 import { Bullet, drawBullets, updateBullets } from './bullet';
 import { Ship, createShips, drawShips, updateShips } from './ship';
+import { toggleFullscreen } from './utils';
 
 new p5(createSketch);
 
 function createSketch(p: p5) {
-    let centrePos: p5.Vector;
     let attractors: Attractor[] = [];
     let ships: Ship[] = [];
     let bullets: Bullet[] = [];
 
-    /** Called once, automatically, by p5.js */
     function setup() {
         const myCanvas = p.createCanvas(p.windowWidth, p.windowHeight);
-        centrePos = p.createVector(p.width / 2, p.height / 2);
         ships = createShips(p);
         attractors = createAttractors(p);
 
         myCanvas.mousePressed(handleMousePressed);
     }
 
-    /** Called every frame, automatically, by p5.js */
     function draw() {
         p.background(100);
+
         drawShips(ships, p);
         drawAttractors(attractors, p);
         drawBullets(bullets, p);
+
         updateShips(ships, attractors, bullets, p);
         updateBullets(bullets, p);
         updateAttractors(attractors, p);
@@ -48,9 +47,15 @@ function createSketch(p: p5) {
             addAttractorAtPosition(mousePos, attractors, p);
         }
     }
-
+    function keyPressed() {
+        if (p.key === 'f') {
+            toggleFullscreen(p);
+        }
+    }
     //Crucially, assign the setup and draw functions for the p5 createSketch.
     p.setup = setup;
     p.draw = draw;
+    p.keyPressed = keyPressed;
+
     p.windowResized = () => p.resizeCanvas(p.windowWidth, p.windowHeight);
 }

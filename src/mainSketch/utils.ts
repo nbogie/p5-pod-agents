@@ -11,3 +11,12 @@ export function randomVelocity(p: p5) {
 export function randomScreenPosition(p: p5) {
     return p.createVector(p.random(p.width), p.random(p.height));
 }
+
+export function centrePos(p: p5): p5.Vector {
+    return p.createVector(p.width / 2, p.height / 2);
+}
+
+export function toggleFullscreen(p: p5) {
+    let fsState = p.fullscreen();
+    p.fullscreen(!fsState);
+}

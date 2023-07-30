@@ -1,6 +1,6 @@
 import p5 from 'p5';
 import { Ship } from './ship';
-
+//git master copy - was in https://openprocessing.org/sketch/1979064
 export type Trail = p5.Vector[];
 export function drawTrail(ship: Ship, p: p5) {
     p.beginShape();
