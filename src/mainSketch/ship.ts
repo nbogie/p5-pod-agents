@@ -1,5 +1,10 @@
 import p5 from 'p5';
-import { Attractor, AttractorKind } from './attractor';
+import {
+    Attractor,
+    AttractorKind,
+    calcAttractorStrength,
+    recycleAttractor,
+} from './attractor';
 import { centrePos, randomScreenPosition } from './utils';
 import { Bullet, fireBullet } from './bullet';
 import { Trail, drawTrail } from './trail';
@@ -10,6 +15,7 @@ export interface Ship {
     podCount: number;
     colour1: p5.Color;
     lastPickupFrame: number;
+    lastDropoffFrame: number;
     trail: Trail;
     kind: ShipKind;
 }
@@ -25,6 +31,7 @@ export function createShip(kind: ShipKind, p: p5): Ship {
         podCount: 0,
         colour1: c,
         lastPickupFrame: 0,
+        lastDropoffFrame: 0,
         trail: [],
         kind,
     };
@@ -94,44 +101,61 @@ export function updateShip(
 
     teleportIfNecessary(ship, p);
 
+    applyForcesFromAttractors(ship, attractors, p);
+
     handleCollisions(ship, attractors, p);
 
-    applyAttractors(ship, attractors, p);
+    const randomSteeringAmount = 0;
 
-    const randomSteeringAmount = 0.1;
     ship.vel.rotate(p.random(-randomSteeringAmount, randomSteeringAmount));
-    ship.vel.limit(10);
+    ship.vel.limit(5);
     ship.pos.add(ship.vel);
 
-    if (p.random() < 0.01) {
+    if (p.random() < 0.1) {
         fireBullet(ship, bullets, p);
     }
 }
 
-function handleCollisions(ship: Ship, attractors: Attractor[], p: p5) {
+function applyForcesFromAttractors(ship: Ship, attractors: Attractor[], p: p5) {
     for (const attractor of attractors) {
         // attractor.strength = map(sin(attractor.phase + frameCount / 100), -1, 1, 0, 0.2, true);
-        attractor.strength = p.map(attractor.podCount, 0, 5, 0, 0.2, true);
+        const strength = calcAttractorStrength(attractor, ship, p);
         const distToAttractor = attractor.pos.dist(ship.pos);
         const accel = p5.Vector.sub(attractor.pos, ship.pos).setMag(
-            attractor.strength * 1000
+            strength * 1000
         );
         accel.mult(1 / p.pow(distToAttractor, 1.5)).limit(1);
         ship.vel.add(accel);
     }
 }
 
-function applyAttractors(ship: Ship, attractors: Attractor[], p: p5) {
+function handleCollisions(ship: Ship, attractors: Attractor[], p: p5) {
     for (const attractor of attractors) {
-        if (attractor.pos.dist(ship.pos) < 20) {
-            if (
-                attractor.podCount > 0 &&
-                ship.podCount < 5 &&
-                p.frameCount - ship.lastPickupFrame > 59
-            ) {
-                attractor.podCount--;
-                ship.podCount++;
-                ship.lastPickupFrame = p.frameCount;
+        if (attractor.pos.dist(ship.pos) < 50) {
+            if (attractor.kind === 'dest') {
+                //drop-off
+                if (
+                    ship.podCount > 0 &&
+                    p.frameCount - ship.lastDropoffFrame > 59
+                ) {
+                    attractor.podCount++;
+                    ship.podCount--;
+                    ship.lastDropoffFrame = p.frameCount;
+                }
+            } else {
+                //pickup
+                if (
+                    attractor.podCount > 0 &&
+                    ship.podCount < 5 &&
+                    p.frameCount - ship.lastPickupFrame > 59
+                ) {
+                    attractor.podCount--;
+                    ship.podCount++;
+                    ship.lastPickupFrame = p.frameCount;
+                    if (attractor.podCount <= 0) {
+                        recycleAttractor(attractor, attractors, p);
+                    }
+                }
             }
         }
     }

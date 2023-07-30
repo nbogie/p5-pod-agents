@@ -17,7 +17,7 @@ export interface Bullet {
 function createBullet(source: BulletSource, p: p5): Bullet {
     return {
         pos: source.pos.copy(),
-        vel: source.vel.copy().setMag(15),
+        vel: source.vel.copy().setMag(15).rotate(p.random(-0.1, 0.1)),
         isDead: false,
         colour: source.colour1,
     };
@@ -33,6 +33,9 @@ export function updateBullets(bullets: Bullet[], p: p5) {
     for (let b of bullets) {
         updateBullet(b, p);
     }
+    const newBullets = bullets.filter((b) => !b.isDead);
+    bullets.length = 0;
+    bullets.push(...newBullets);
 }
 
 export function updateBullet(b: Bullet, p: p5) {
@@ -54,6 +57,9 @@ export function drawBullet(b: Bullet, p: p5) {
 }
 
 export function fireBullet(source: BulletSource, bullets: Bullet[], p: p5) {
+    if (source.vel.mag() < 0.001) {
+        return;
+    }
     const b = createBullet(source, p);
     bullets.push(b);
 }

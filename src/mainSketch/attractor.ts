@@ -1,28 +1,29 @@
 import p5 from 'p5';
+import { Ship } from './ship';
 import { randomScreenPosition } from './utils';
 
 export type AttractorKind = 'src' | 'dest';
 export interface Attractor {
     pos: p5.Vector;
-    strength: number;
     phase: number;
     podCount: number;
     kind: AttractorKind;
+    isDead: boolean;
 }
 
-export function createAttractor(kind: AttractorKind, p: p5) {
+export function createAttractor(kind: AttractorKind, p: p5): Attractor {
     return {
         pos: randomScreenPosition(p),
-        strength: p.random(0.01, 0.1),
         phase: p.random(p.TWO_PI),
-        podCount: 1 + p.int(p.random(5)),
+        podCount: kind === 'dest' ? 0 : 1 + p.int(p.random(7)),
         kind,
+        isDead: false,
     };
 }
 
 export function createAttractors(p: p5): Attractor[] {
     const attractors = [];
-    for (let i = 0; i < 10; i++) {
+    for (let i = 0; i < 20; i++) {
         const attr = createAttractor(i % 2 === 0 ? 'src' : 'dest', p);
         attractors.push(attr);
     }
@@ -40,7 +41,7 @@ export function drawAttractor(attractor: Attractor, p: p5) {
     p.translate(attractor.pos);
     p.noFill();
     p.stroke(255, 100);
-    const sz = p.map(attractor.strength, 0, 0.2, 10, 100, true);
+    const sz = 70;
     if (attractor.kind === 'src') {
         p.circle(0, 0, sz);
     } else {
@@ -54,8 +55,9 @@ export function drawAttractor(attractor: Attractor, p: p5) {
 }
 
 export function updateAttractors(attractors: Attractor[], p: p5) {
-    for (let attractor of attractors) {
-    }
+    const attractorsToKeep = attractors.filter((a) => !a.isDead);
+    attractors.length = 0;
+    attractors.push(...attractorsToKeep);
 }
 
 export function addAttractorAtPosition(
@@ -69,8 +71,9 @@ export function addAttractorAtPosition(
     const a = createAttractor(sLen < dLen ? 'src' : 'dest', p);
     a.pos = pos.copy();
     attractors.push(a);
-    if (attractors.length >= 10) {
-        attractors.shift();
+    const liveAttractors = attractors.filter((a) => !a.isDead);
+    if (liveAttractors.length >= 10) {
+        liveAttractors[0].isDead = true;
     }
 }
 
@@ -80,4 +83,24 @@ export function removeAttractorNearestToPosition(
     p: p5
 ) {
     attractors.pop();
+}
+
+export function calcAttractorStrength(
+    attractor: Attractor,
+    ship: Ship,
+    p: p5
+): number {
+    return attractor.kind === 'dest'
+        ? p.map(ship.podCount, 0, 5, 0, 0.2, true)
+        : p.map(attractor.podCount, 0, 5, 0, 0.2, true);
+}
+
+export function recycleAttractor(
+    attractor: Attractor,
+    attractors: Attractor[],
+    p: p5
+) {
+    attractor.isDead = true;
+    const newA = createAttractor(attractor.kind, p);
+    attractors.push(newA);
 }
