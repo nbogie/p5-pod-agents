@@ -58,6 +58,12 @@ export function drawShip(ship: Ship, p: p5) {
         p.circle(0, 0, 10);
     }
     p.pop();
+    // drawTextLabel(ship, p);
+
+    drawTrail(ship, p);
+}
+
+function drawTextLabel(ship: Ship, p: p5): void {
     p.push();
     p.noStroke();
     p.fill('white');
@@ -66,9 +72,7 @@ export function drawShip(ship: Ship, p: p5) {
     p.textSize(30);
     p.text(ship.podCount, 0, 0);
     p.pop();
-    drawTrail(ship, p);
 }
-
 export function updateShips(
     ships: Ship[],
     attractors: Attractor[],
