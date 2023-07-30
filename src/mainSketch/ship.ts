@@ -90,20 +90,38 @@ export function updateShip(
     bullets: Bullet[],
     p: p5
 ) {
-    ship.trail.push(ship.pos.copy());
-    if (ship.pos.dist(centrePos(p)) > 4000) {
-        ship.trail.length = 0;
-        ship.pos = randomScreenPosition(p);
-        ship.vel = p.createVector(0, 0);
-    }
-    if (ship.trail.length > 60) {
-        ship.trail.shift();
-    }
+    recordToTrail(ship, p);
+
+    teleportIfNecessary(ship, p);
+
+    handleCollisions(ship, attractors, p);
+
+    applyAttractors(ship, attractors, p);
+
+    const randomSteeringAmount = 0.1;
+    ship.vel.rotate(p.random(-randomSteeringAmount, randomSteeringAmount));
+    ship.vel.limit(10);
     ship.pos.add(ship.vel);
-    if (ship.pos.dist(centrePos(p)) > p.min(p.width, p.height) * 0.5) {
-        // ship.pos = centrePos.copy()
-        // ship.vel = randomVelocity()
+
+    if (p.random() < 0.01) {
+        fireBullet(ship, bullets, p);
     }
+}
+
+function handleCollisions(ship: Ship, attractors: Attractor[], p: p5) {
+    for (const attractor of attractors) {
+        // attractor.strength = map(sin(attractor.phase + frameCount / 100), -1, 1, 0, 0.2, true);
+        attractor.strength = p.map(attractor.podCount, 0, 5, 0, 0.2, true);
+        const distToAttractor = attractor.pos.dist(ship.pos);
+        const accel = p5.Vector.sub(attractor.pos, ship.pos).setMag(
+            attractor.strength * 1000
+        );
+        accel.mult(1 / p.pow(distToAttractor, 1.5)).limit(1);
+        ship.vel.add(accel);
+    }
+}
+
+function applyAttractors(ship: Ship, attractors: Attractor[], p: p5) {
     for (const attractor of attractors) {
         if (attractor.pos.dist(ship.pos) < 20) {
             if (
@@ -117,22 +135,21 @@ export function updateShip(
             }
         }
     }
+}
 
-    for (const attractor of attractors) {
-        // attractor.strength = map(sin(attractor.phase + frameCount / 100), -1, 1, 0, 0.2, true);
-        attractor.strength = p.map(attractor.podCount, 0, 5, 0, 0.2, true);
-        const distToAttractor = attractor.pos.dist(ship.pos);
-        const accel = p5.Vector.sub(attractor.pos, ship.pos).setMag(
-            attractor.strength * 1000
-        );
-        accel.mult(1 / p.pow(distToAttractor, 1.5)).limit(1);
-        ship.vel.add(accel);
+function teleportIfNecessary(ship: Ship, p: p5): boolean {
+    if (ship.pos.dist(centrePos(p)) > 4000) {
+        ship.trail.length = 0;
+        ship.pos = randomScreenPosition(p);
+        ship.vel = p.createVector(0, 0);
+        return true;
     }
-    const randomSteeringAmount = 0.1;
-    ship.vel.rotate(p.random(-randomSteeringAmount, randomSteeringAmount));
-    ship.vel.limit(10);
+    return false;
+}
 
-    if (p.random() < 0.001) {
-        fireBullet(ship, bullets, p);
+function recordToTrail(ship: Ship, p: p5) {
+    ship.trail.push(ship.pos.copy());
+    if (ship.trail.length > 60) {
+        ship.trail.shift();
     }
 }
